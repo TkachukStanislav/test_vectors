@@ -1,10 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.db import get_session
 from app.models import User
-from app.schemas import UserCreate, UserRead
+from app.schemas import UserCreate, UserRead, UserWithJobs
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -36,3 +38,20 @@ async def get_user(user_id: int, session: AsyncSession = Depends(get_session)):
             detail="User not found",
         )
     return user
+
+
+@router.get("", response_model=list[UserWithJobs], status_code=status.HTTP_200_OK)
+async def list_users(
+    limit: int = Query(default=10, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    session: AsyncSession = Depends(get_session),
+):
+    query = (
+        select(User)
+        .options(selectinload(User.jobs))
+        .order_by(User.id)
+        .limit(limit)
+        .offset(offset)
+    )
+    result = await session.execute(query)
+    return result.scalars().all()
