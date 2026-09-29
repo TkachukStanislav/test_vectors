@@ -18,3 +18,4 @@ class JobRead(BaseModel):
     payload: str
     status: JobStatus
     created_at: datetime
+    result: str | None = None

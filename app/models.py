@@ -22,3 +22,4 @@ class Job(Base):
         server_default=func.now(),
         nullable=False,
     )
+    result: Mapped[str | None] = mapped_column(String(200))
