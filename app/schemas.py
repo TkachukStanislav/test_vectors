@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class JobStatus(str, Enum):
@@ -19,3 +19,4 @@ class JobRead(BaseModel):
     status: JobStatus
     created_at: datetime
     result: str | None = None
+    model_config = ConfigDict(from_attributes=True)
