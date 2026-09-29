@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db import get_session
 from app.embeddings import fake_embedding
 from app.models import Job, User
-from app.schemas import JobCreate, JobRead
+from app.schemas import JobCreate, JobRead, SimilarJob
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
@@ -27,6 +27,38 @@ async def create_job(job_data: JobCreate, session: AsyncSession = Depends(get_se
     await session.refresh(job)
     return job
 
+
+@router.get("/{job_id}/similar", response_model=list[SimilarJob])
+async def similar_jobs(
+    job_id: int,
+    limit: int = Query(default=5, ge=1, le=20),
+    session: AsyncSession = Depends(get_session),
+):
+    target = await session.get(Job, job_id)
+    if target is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Job not found",
+        )
+    if target.embedding is None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Job has no embedding",
+        )
+
+    distance = Job.embedding.cosine_distance(target.embedding).label("distance")
+    stmt = (
+        select(Job, distance)
+        .where(Job.id != job_id, Job.embedding.is_not(None))
+        .order_by(distance)
+        .limit(limit)
+    )
+    result = await session.execute(stmt)
+
+    return [
+        {**JobRead.model_validate(job).model_dump(), "distance": dist}
+        for job, dist in result.all()
+    ]
 
 @router.get("/{job_id}", response_model=JobRead, status_code=status.HTTP_200_OK)
 async def get_job(job_id: int, session: AsyncSession = Depends(get_session)):

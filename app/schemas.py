@@ -38,3 +38,6 @@ class UserRead(BaseModel):
 
 class UserWithJobs(UserRead):
     jobs: list[JobRead] = []
+
+class SimilarJob(JobRead):
+    distance: float
