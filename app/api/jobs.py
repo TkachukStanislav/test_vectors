@@ -3,6 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_session
+from app.embeddings import fake_embedding
 from app.models import Job, User
 from app.schemas import JobCreate, JobRead
 
@@ -16,7 +17,11 @@ async def create_job(job_data: JobCreate, session: AsyncSession = Depends(get_se
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
         )
-    job = Job(payload=job_data.payload, user_id=job_data.user_id)
+    job = Job(
+        payload=job_data.payload,
+        user_id=job_data.user_id,
+        embedding=fake_embedding(job_data.payload),
+    )
     session.add(job)
     await session.commit()
     await session.refresh(job)

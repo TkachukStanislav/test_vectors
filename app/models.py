@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import DateTime, Enum, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -36,9 +37,11 @@ class Job(Base):
         nullable=False,
     )
     result: Mapped[str | None] = mapped_column(String(200))
+    embedding: Mapped[list[float] | None] = mapped_column(Vector(8))
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"),
         index=True,
     )
 
     user: Mapped["User"] = relationship(back_populates="jobs")
+    
