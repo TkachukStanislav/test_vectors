@@ -1,10 +1,23 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, String, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import DateTime, Enum, ForeignKey, String, func
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
 from app.schemas import JobStatus
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    email: Mapped[str] = mapped_column(String(255), unique=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+    )
+
+    jobs: Mapped[list["Job"]] = relationship(back_populates="user")
 
 
 class Job(Base):
@@ -23,3 +36,9 @@ class Job(Base):
         nullable=False,
     )
     result: Mapped[str | None] = mapped_column(String(200))
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        index=True,
+    )
+
+    user: Mapped["User"] = relationship(back_populates="jobs")

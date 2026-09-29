@@ -3,7 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_session
-from app.models import Job
+from app.models import Job, User
 from app.schemas import JobCreate, JobRead
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
@@ -11,7 +11,12 @@ router = APIRouter(prefix="/jobs", tags=["jobs"])
 
 @router.post("", response_model=JobRead, status_code=status.HTTP_201_CREATED)
 async def create_job(job_data: JobCreate, session: AsyncSession = Depends(get_session)):
-    job = Job(payload=job_data.payload)
+    if await session.get(User, job_data.user_id) is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+    job = Job(payload=job_data.payload, user_id=job_data.user_id)
     session.add(job)
     await session.commit()
     await session.refresh(job)

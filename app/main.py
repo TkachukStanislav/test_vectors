@@ -1,9 +1,10 @@
 from fastapi import FastAPI, status
 
-from app.api import jobs
+from app.api import jobs, users
 
 app = FastAPI()
 
+app.include_router(users.router)
 app.include_router(jobs.router)
 
 
