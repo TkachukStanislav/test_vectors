@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.cache import JOB_CACHE_TTL, job_cache_key, redis_client
 from app.db import get_session
 from app.embeddings import fake_embedding
+from app.metrics import JOBS_CREATED
 from app.models import Job, User
 from app.schemas import JobCreate, JobRead, SimilarJob
 from app.worker import process_job
@@ -28,6 +29,7 @@ async def create_job(job_data: JobCreate, session: AsyncSession = Depends(get_se
     await session.commit()
     await session.refresh(job)
     process_job.delay(job.id)
+    JOBS_CREATED.inc()
     return job
 
 
