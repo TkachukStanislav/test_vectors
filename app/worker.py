@@ -1,14 +1,17 @@
 import time
 
 from celery import Celery
+from redis import Redis
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
+from app.cache import job_cache_key
 from app.config import settings
 from app.models import Job
 from app.schemas import JobStatus
 
+redis_sync = Redis.from_url(settings.redis_url)
 celery_app = Celery("mini_petp", broker=settings.celery_broker_url)
 
 # Celery синхронний, тому у воркері синхронний драйвер psycopg замість asyncpg
@@ -34,3 +37,4 @@ def process_job(job_id: int) -> None:
         except Exception:
             job.status = JobStatus.failed
         session.commit()
+        redis_sync.delete(job_cache_key(job_id))

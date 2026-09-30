@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.cache import JOB_CACHE_TTL, job_cache_key, redis_client
 from app.db import get_session
 from app.embeddings import fake_embedding
 from app.models import Job, User
@@ -62,15 +63,23 @@ async def similar_jobs(
         for job, dist in result.all()
     ]
 
+
 @router.get("/{job_id}", response_model=JobRead, status_code=status.HTTP_200_OK)
 async def get_job(job_id: int, session: AsyncSession = Depends(get_session)):
+    cached = await redis_client.get(job_cache_key(job_id))
+    if cached is not None:
+        return JobRead.model_validate_json(cached)
+
     job = await session.get(Job, job_id)
     if job is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Job not found",
         )
-    return job
+
+    job_read = JobRead.model_validate(job)
+    await redis_client.set(job_cache_key(job_id), job_read.model_dump_json(), ex=JOB_CACHE_TTL)
+    return job_read
 
 
 @router.get("", response_model=list[JobRead], status_code=status.HTTP_200_OK)
