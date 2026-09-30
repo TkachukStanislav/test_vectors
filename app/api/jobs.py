@@ -6,6 +6,7 @@ from app.db import get_session
 from app.embeddings import fake_embedding
 from app.models import Job, User
 from app.schemas import JobCreate, JobRead, SimilarJob
+from app.worker import process_job
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
@@ -25,6 +26,7 @@ async def create_job(job_data: JobCreate, session: AsyncSession = Depends(get_se
     session.add(job)
     await session.commit()
     await session.refresh(job)
+    process_job.delay(job.id)
     return job
 
 
