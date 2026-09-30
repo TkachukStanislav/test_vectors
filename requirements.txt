@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+sqlalchemy[asyncio]
+asyncpg
+alembic
+pydantic-settings
+pydantic[email]
+pgvector
+celery
+psycopg[binary]
+redis
+prometheus-client
+prometheus-fastapi-instrumentator
