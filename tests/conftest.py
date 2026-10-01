@@ -7,8 +7,10 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
-from app import models  # noqa: F401 — імпорт реєструє таблиці в Base.metadata
-from app import worker
+from app import (
+    models,  # noqa: F401 — імпорт реєструє таблиці в Base.metadata
+    worker,
+)
 from app.api import jobs as jobs_api
 from app.config import settings
 from app.db import Base, get_session

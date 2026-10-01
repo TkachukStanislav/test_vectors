@@ -17,14 +17,14 @@ async def create_user(user_data: UserCreate, session: AsyncSession = Depends(get
     session.add(user)
     try:
         await session.commit()
-    except IntegrityError:
+    except IntegrityError as err:
         # унікальність email гарантує БД (UNIQUE), а не попередній SELECT —
         # так немає гонки між двома одночасними запитами
         await session.rollback()
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="User with this email already exists",
-        )
+        ) from err
     await session.refresh(user)
     return user
 

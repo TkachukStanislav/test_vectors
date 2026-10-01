@@ -1,7 +1,8 @@
 from fastapi import FastAPI, status
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.api import jobs, users
-from prometheus_fastapi_instrumentator import Instrumentator
+
 app = FastAPI()
 
 app.include_router(users.router)
